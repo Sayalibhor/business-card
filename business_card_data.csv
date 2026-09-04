@@ -1,2 +1,5 @@
-﻿Name,Designation,Company,GSTIN,Phone,Address,Email,Website
-Amit G. Sarode,Director,Invictus Solution,27AUPPA9183G1ZA,"9881272122, 9158272122","Sr. No. 66/1, Near HDFC Bank, CME Colony, New Sangvi, Pune - 411061",amit@invictusmachinesolution.com,invictusmachinesolution.com
+﻿Name,Designation,Company,GSTIN,Phone,Address,Email,Website,Address_Match,Match_Percentage
+Amit G. Sarode,Director,Invictus Solution,27AUPPA9183G1ZA,"9881272122, 9158272122","Sr. No. 66/1, Near HDFC Bank, CME Colony, New Sangvi, Pune - 411061",amit@invictusmachinesolution.com,invictusmachinesolution.com,NOT MATCHED,0.0
+Not Found,Not Found,Invictus Solution,Not Found,Not Found,Not Found,Not Found,Not Found,"Sr. No. 66/1, Near HDFC Bank, CME Colony, New Sangvi, Pune - 411061",NOT MATCHED,20.59
+Not Found,Not Found,Invictus Solution,Not Found,Not Found,Not Found,Not Found,Not Found,"Sr. No. 66/1, Near HDFC Bank, CME Colony, New Sangvi, Pune - 411061",NOT MATCHED,20.59
+Amit G. Sarode GSTIN 27AUPPA9188G1Z4,Director,Invictus Solution,Not Found,"9881272122, 9158272122",Not Found,Not Found,"_ Regd. Add. Sr Ne fos]. Near HBFC Bank, CME Colony New Sangy. Pune 411061","Sr. No. 66/1, Near HDFC Bank, CME Colony, New Sangvi, Pune - 411061",MATCHED,70.0
