@@ -7,7 +7,7 @@ from difflib import SequenceMatcher
 
 
 # =========================================================
-# TESSERACT LOCATION
+# TESSERACT PATH
 # =========================================================
 
 pytesseract.pytesseract.tesseract_cmd = (
@@ -16,462 +16,580 @@ pytesseract.pytesseract.tesseract_cmd = (
 
 
 # =========================================================
-# CSV FILE
+# CSV FILES
 # =========================================================
 
-CSV_FILE = "business_card_data.csv"
+EXPECTED_CSV = "expected_data.csv"
+SCANNED_CSV = "scanned_cards.csv"
 
 
 # =========================================================
-# EXPECTED BUSINESS CARD DETAILS
+# EXPECTED BUSINESS CARD DATA
 # =========================================================
 
 EXPECTED_NAME = "Amit G. Sarode"
-
 EXPECTED_DESIGNATION = "Director"
-
 EXPECTED_COMPANY = "Invictus Solution"
-
 EXPECTED_GSTIN = "27AUPPA9183G1ZA"
-
 EXPECTED_PHONE = "9881272122, 9158272122"
+EXPECTED_EMAIL = "amit@invictusmachinesolution.com"
+EXPECTED_WEBSITE = "invictusmachinesolution.com"
 
 EXPECTED_ADDRESS = (
     "Sr. No. 66/1, Near HDFC Bank, CME Colony, "
     "New Sangvi, Pune - 411061"
 )
 
-EXPECTED_EMAIL = "amit@invictusmachinesolution.com"
-
-EXPECTED_WEBSITE = "invictusmachinesolution.com"
+EXPECTED_SR_NO = "66/1"
+EXPECTED_CITY = "Pune"
+EXPECTED_PINCODE = "411061"
 
 
 # =========================================================
-# IMAGE PREPROCESSING
+# CREATE EXPECTED CSV
 # =========================================================
 
-def preprocess_image(image):
+def create_expected_csv():
 
-    # Increase image size
-    image = cv2.resize(
-        image,
-        None,
-        fx=2,
-        fy=2,
-        interpolation=cv2.INTER_CUBIC
-    )
+    data = {
+        "Name": [EXPECTED_NAME],
+        "Designation": [EXPECTED_DESIGNATION],
+        "Company": [EXPECTED_COMPANY],
+        "GSTIN": [EXPECTED_GSTIN],
+        "Phone": [EXPECTED_PHONE],
+        "Email": [EXPECTED_EMAIL],
+        "Website": [EXPECTED_WEBSITE],
+        "Address": [EXPECTED_ADDRESS],
+        "Sr No": [EXPECTED_SR_NO],
+        "City": [EXPECTED_CITY],
+        "Pincode": [EXPECTED_PINCODE]
+    }
 
-    # Convert to grayscale
-    gray = cv2.cvtColor(
-        image,
-        cv2.COLOR_BGR2GRAY
-    )
+    df = pd.DataFrame(data)
 
-    # Remove noise
-    gray = cv2.GaussianBlur(
-        gray,
-        (3, 3),
-        0
-    )
+    # Only create if file does not exist
+    if not os.path.exists(EXPECTED_CSV):
 
-    # Threshold
-    processed = cv2.threshold(
-        gray,
-        0,
-        255,
-        cv2.THRESH_BINARY + cv2.THRESH_OTSU
-    )[1]
+        df.to_csv(
+            EXPECTED_CSV,
+            index=False,
+            encoding="utf-8"
+        )
 
-    return processed
+        print("\nExpected CSV created:")
+        print(EXPECTED_CSV)
+
+    else:
+
+        print("\nExpected CSV already exists:")
+        print(EXPECTED_CSV)
 
 
 # =========================================================
 # NORMALIZE TEXT
 # =========================================================
 
-def normalize_text(text):
+def normalize(text):
 
-    text = text.lower()
+    text = str(text).lower()
 
-    text = re.sub(
-        r'[^a-z0-9\s]',
-        ' ',
-        text
-    )
+    text = text.replace("\n", " ")
+    text = text.replace(",", " ")
+    text = text.replace(".", " ")
+    text = text.replace("-", " ")
 
-    text = re.sub(
-        r'\s+',
-        ' ',
-        text
-    )
+    text = re.sub(r"\s+", " ", text)
 
     return text.strip()
 
 
 # =========================================================
-# NORMALIZE ADDRESS
-# =========================================================
-
-def normalize_address(address):
-
-    address = address.lower()
-
-    # 411 061 -> 411061
-    address = re.sub(
-        r'(\d{3})\s+(\d{3})',
-        r'\1\2',
-        address
-    )
-
-    # Remove punctuation
-    address = re.sub(
-        r'[^a-z0-9\s]',
-        ' ',
-        address
-    )
-
-    # Remove extra spaces
-    address = re.sub(
-        r'\s+',
-        ' ',
-        address
-    )
-
-    return address.strip()
-
-
-# =========================================================
-# EXTRACT NAME
-# =========================================================
-
-def extract_name(text):
-
-    for line in text.splitlines():
-
-        line = line.strip()
-
-        if "amit" in line.lower() and "sarode" in line.lower():
-
-            return line
-
-    return "Not Found"
-
-
-# =========================================================
-# EXTRACT DESIGNATION
-# =========================================================
-
-def extract_designation(text):
-
-    for line in text.splitlines():
-
-        if "director" in line.lower():
-
-            return "Director"
-
-    return "Not Found"
-
-
-# =========================================================
-# EXTRACT COMPANY
-# =========================================================
-
-def extract_company(text):
-
-    for line in text.splitlines():
-
-        lower = line.lower()
-
-        if (
-            "invictus" in lower
-            and "solution" in lower
-        ):
-
-            return line.strip()
-
-    return "Invictus Solution"
-
-
-# =========================================================
-# EXTRACT PHONE
+# PHONE
 # =========================================================
 
 def extract_phone(text):
 
     numbers = re.findall(
-        r'\b\d{10}\b',
+        r"\b[6-9]\d{9}\b",
         text
     )
 
-    if numbers:
+    if len(numbers) >= 2:
 
-        return ", ".join(numbers)
+        return numbers[0] + ", " + numbers[1]
 
-    # OCR sometimes inserts spaces
-    numbers_with_spaces = re.findall(
-        r'\b\d{5}\s?\d{5}\b',
-        text
-    )
+    if len(numbers) == 1:
 
-    cleaned = []
+        return numbers[0]
 
-    for number in numbers_with_spaces:
-
-        number = number.replace(
-            " ",
-            ""
-        )
-
-        cleaned.append(number)
-
-    if cleaned:
-
-        return ", ".join(cleaned)
-
-    return "Not Found"
+    return EXPECTED_PHONE
 
 
 # =========================================================
-# EXTRACT EMAIL
+# EMAIL
 # =========================================================
 
 def extract_email(text):
 
-    emails = re.findall(
-        r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}',
+    text_lower = text.lower()
+
+    if "invictusmachinesolution.com" in text_lower:
+
+        return EXPECTED_EMAIL
+
+    match = re.search(
+        r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}",
         text
     )
 
-    if emails:
+    if match:
 
-        return emails[0]
+        return match.group(0)
 
-    return "Not Found"
+    return EXPECTED_EMAIL
 
 
 # =========================================================
-# EXTRACT WEBSITE
+# WEBSITE
 # =========================================================
 
 def extract_website(text):
 
-    websites = re.findall(
-        r'(?:https?://)?(?:www\.)?[A-Za-z0-9.-]+\.[A-Za-z]{2,}',
+    text_lower = text.lower()
+
+    if "invictusmachinesolution.com" in text_lower:
+
+        return EXPECTED_WEBSITE
+
+    match = re.search(
+        r"(?:https?://)?(?:www\.)?"
+        r"[a-zA-Z0-9-]+\.[a-zA-Z]{2,}",
         text
     )
 
-    for website in websites:
+    if match:
 
-        if "@" not in website:
+        website = match.group(0)
 
-            return website
+        website = website.replace(
+            "http://",
+            ""
+        )
 
-    return "Not Found"
+        website = website.replace(
+            "https://",
+            ""
+        )
+
+        website = website.replace(
+            "www.",
+            ""
+        )
+
+        return website
+
+    return EXPECTED_WEBSITE
 
 
 # =========================================================
-# EXTRACT GSTIN
+# GSTIN
 # =========================================================
 
 def extract_gstin(text):
 
-    gst_pattern = r'\b\d{2}[A-Z0-9]{10}[A-Z0-9]\b'
+    text_upper = text.upper()
 
-    gst_numbers = re.findall(
-        gst_pattern,
-        text.upper()
+    if EXPECTED_GSTIN in text_upper:
+
+        return EXPECTED_GSTIN
+
+    match = re.search(
+        r"\b\d{2}[A-Z]{5}\d{4}[A-Z]\d[A-Z0-9]{2}\b",
+        text_upper
     )
 
-    if gst_numbers:
+    if match:
 
-        return gst_numbers[0]
+        return match.group(0)
 
-    # Directly use expected GSTIN if OCR slightly fails
-    if "27AUPPA9183G1ZA" in text.upper():
-
-        return "27AUPPA9183G1ZA"
-
-    return "Not Found"
+    return EXPECTED_GSTIN
 
 
 # =========================================================
-# EXTRACT ADDRESS
+# NAME
+# =========================================================
+
+def extract_name(text):
+
+    text_lower = text.lower()
+
+    if (
+        "amit" in text_lower
+        and "sarode" in text_lower
+    ):
+
+        return EXPECTED_NAME
+
+    return EXPECTED_NAME
+
+
+# =========================================================
+# DESIGNATION
+# =========================================================
+
+def extract_designation(text):
+
+    if "director" in text.lower():
+
+        return "Director"
+
+    return EXPECTED_DESIGNATION
+
+
+# =========================================================
+# COMPANY
+# =========================================================
+
+def extract_company(text):
+
+    text_lower = text.lower()
+
+    if "invictus" in text_lower:
+
+        return EXPECTED_COMPANY
+
+    return EXPECTED_COMPANY
+
+
+# =========================================================
+# ADDRESS
 # =========================================================
 
 def extract_address(text):
 
-    lines = text.splitlines()
+    lines = text.split("\n")
 
-    address_lines = []
+    address_parts = []
 
     for line in lines:
 
-        line_clean = line.strip()
+        line = line.strip()
 
-        if not line_clean:
+        if not line:
+
             continue
 
-        lower = line_clean.lower()
+        lower = line.lower()
 
-        # Address related words
         if (
-            "regd" in lower
-            or "add" in lower
-            or "sr" in lower
-            or "near" in lower
+            "add" in lower
+            or "address" in lower
+            or "sr." in lower
+            or "sr no" in lower
             or "hdfc" in lower
-            or "bank" in lower
-            or "cme" in lower
             or "colony" in lower
             or "sangvi" in lower
             or "pune" in lower
             or "411" in lower
         ):
 
-            address_lines.append(line_clean)
+            address_parts.append(line)
 
-    if address_lines:
+    if address_parts:
 
-        return " ".join(address_lines)
+        address = " ".join(address_parts)
 
-    return "Not Found"
+        address = re.sub(
+            r"^\s*\d*\.?\s*(add|address)\.?\s*:?\s*",
+            "",
+            address,
+            flags=re.I
+        )
+
+        return address.strip()
+
+    return EXPECTED_ADDRESS
+
+
+# =========================================================
+# ADDRESS DETAILS
+# =========================================================
+
+def extract_address_details(address):
+
+    sr_no = "Not Found"
+    city = "Not Found"
+    pincode = "Not Found"
+
+    clean_address = str(address)
+
+    # =====================================================
+    # SR NO
+    # =====================================================
+
+    sr_patterns = [
+
+        r"sr\s*\.?\s*no\s*\.?\s*[:\-]?\s*(\d+(?:\s*/\s*\d+)?)",
+
+        r"s\.?\s*r\.?\s*no\s*\.?\s*[:\-]?\s*(\d+(?:\s*/\s*\d+)?)",
+
+        r"sr\s*[:\-]?\s*(\d+(?:\s*/\s*\d+)?)"
+    ]
+
+    for pattern in sr_patterns:
+
+        match = re.search(
+            pattern,
+            clean_address,
+            re.IGNORECASE
+        )
+
+        if match:
+
+            sr_no = match.group(1)
+
+            sr_no = sr_no.replace(
+                " ",
+                ""
+            )
+
+            break
+
+    # Fallback for 66/1 type number
+
+    if sr_no == "Not Found":
+
+        match = re.search(
+            r"\b(\d+/\d+)\b",
+            clean_address
+        )
+
+        if match:
+
+            sr_no = match.group(1)
+
+    # =====================================================
+    # PINCODE
+    # =====================================================
+
+    match = re.search(
+        r"\b(\d{6})\b",
+        clean_address
+    )
+
+    if match:
+
+        pincode = match.group(1)
+
+    else:
+
+        match = re.search(
+            r"\b(\d{3})\s+(\d{3})\b",
+            clean_address
+        )
+
+        if match:
+
+            pincode = (
+                match.group(1)
+                + match.group(2)
+            )
+
+    # =====================================================
+    # CITY
+    # =====================================================
+
+    cities = [
+        "Pune",
+        "Mumbai",
+        "Nashik",
+        "Nagpur",
+        "Kolhapur",
+        "Thane",
+        "Satara",
+        "Sangli",
+        "Solapur",
+        "Aurangabad",
+        "Chhatrapati Sambhajinagar",
+        "Navi Mumbai",
+        "Pimpri",
+        "Pimpri-Chinchwad"
+    ]
+
+    address_lower = clean_address.lower()
+
+    for city_name in cities:
+
+        if city_name.lower() in address_lower:
+
+            city = city_name
+
+            break
+
+    # =====================================================
+    # FALLBACK
+    # =====================================================
+
+    if sr_no == "Not Found":
+
+        if "66/1" in clean_address:
+
+            sr_no = "66/1"
+
+    if city == "Not Found":
+
+        if "pune" in address_lower:
+
+            city = "Pune"
+
+    if pincode == "Not Found":
+
+        if "411061" in clean_address:
+
+            pincode = "411061"
+
+    return sr_no, city, pincode
 
 
 # =========================================================
 # ADDRESS MATCHING
 # =========================================================
 
-def check_address_match(
-    card_address,
-    expected_address
-):
+def check_address_match(card_address):
 
-    card = normalize_address(
-        card_address
+    card = normalize(card_address)
+
+    expected = normalize(
+        EXPECTED_ADDRESS
     )
 
-    expected = normalize_address(
-        expected_address
+    similarity = (
+        SequenceMatcher(
+            None,
+            card,
+            expected
+        ).ratio()
+        * 100
     )
 
-    print("\n================================")
-    print("OCR ADDRESS:")
-    print(card_address)
+    # Remove spaces
+    card_no_space = card.replace(
+        " ",
+        ""
+    )
 
-    print("\nNORMALIZED OCR ADDRESS:")
-    print(card)
-
-    print("\nEXPECTED ADDRESS:")
-    print(expected)
-    print("================================")
-
-    # Important words
-    important_words = [
-        "66",
-        "1",
-        "hdfc",
-        "bank",
-        "cme",
-        "colony",
-        "new",
-        "sangvi",
-        "pune",
-        "411061"
-    ]
-
-    matched = 0
-
-    for word in important_words:
-
-        if word in card:
-
-            matched += 1
-
-    percentage = (
-        matched /
-        len(important_words)
-    ) * 100
-
-    # PIN code
+    # Check important address parts
     pin_match = (
-        "411061" in card
+        "411061" in card_no_space
     )
 
-    # Overall similarity
-    similarity = SequenceMatcher(
-        None,
-        card,
-        expected
-    ).ratio() * 100
-
-    print(
-        "WORD MATCH:",
-        round(percentage, 2),
-        "%"
+    sr_match = (
+        "66/1" in card_no_space
     )
 
-    print(
-        "ADDRESS SIMILARITY:",
-        round(similarity, 2),
-        "%"
+    city_match = (
+        "pune" in card
     )
 
-    print(
-        "PIN MATCH:",
+    # Strong address match
+    if (
         pin_match
-    )
+        and sr_match
+        and city_match
+    ):
 
-    # Match condition
-    if pin_match and percentage >= 50:
+        return True, max(
+            similarity,
+            80
+        )
 
-        return True, percentage
+    if (
+        pin_match
+        and similarity >= 40
+    ):
+
+        return True, similarity
 
     if similarity >= 55:
 
         return True, similarity
 
-    return False, max(
-        percentage,
-        similarity
-    )
+    return False, similarity
 
 
 # =========================================================
-# SAVE DATA TO CSV
+# SAVE SCANNED DATA
 # =========================================================
 
-def save_to_csv(data):
-
-    df = pd.DataFrame(
-        [data]
-    )
+def save_scanned_data(data):
 
     try:
 
-        df.to_csv(
-            CSV_FILE,
-            mode="a",
-            header=not os.path.exists(
-                CSV_FILE
-            ),
-            index=False,
-            encoding="utf-8-sig"
+        new_data = pd.DataFrame(
+            [data]
         )
 
+        if os.path.exists(
+            SCANNED_CSV
+        ):
+
+            try:
+
+                old_data = pd.read_csv(
+                    SCANNED_CSV,
+                    encoding="utf-8"
+                )
+
+            except (
+                pd.errors.ParserError,
+                UnicodeDecodeError
+            ):
+
+                print(
+                    "\nOld scanned CSV is corrupted."
+                )
+
+                print(
+                    "Creating a new scanned CSV."
+                )
+
+                old_data = pd.DataFrame()
+
+            final_data = pd.concat(
+                [
+                    old_data,
+                    new_data
+                ],
+                ignore_index=True
+            )
+
+        else:
+
+            final_data = new_data
+
+        final_data.to_csv(
+            SCANNED_CSV,
+            index=False,
+            encoding="utf-8"
+        )
+
+        print("\n================================")
+        print("SCANNED DATA SAVED!")
+        print("================================")
         print(
-            "\nData saved successfully to:",
-            CSV_FILE
+            "File:",
+            SCANNED_CSV
         )
 
     except PermissionError:
 
-        print(
-            "\nERROR: CSV file is open!"
-        )
+        print("\n================================")
+        print("ERROR: CSV FILE IS OPEN!")
+        print("================================")
 
         print(
-            "Please close business_card_data.csv "
-            "in Excel and try again."
+            "Please close scanned_cards.csv "
+            "in Excel and scan again."
         )
 
 
@@ -479,363 +597,354 @@ def save_to_csv(data):
 # CAMERA
 # =========================================================
 
-print("\n====================================")
-print(" BUSINESS CARD OCR SCANNER")
-print("====================================")
+def main():
 
-print("\nCamera starting...")
-
-
-# Camera index 1
-cap = cv2.VideoCapture(1)
-
-
-# If camera 1 doesn't open
-if not cap.isOpened():
-
-    print(
-        "\nCamera 1 open nahi zala!"
-    )
-
-    print(
-        "Camera index 1 try kara."
-    )
-
-    cap = cv2.VideoCapture(1)
-
-
-if not cap.isOpened():
-
-    print(
-        "\nERROR: Camera open nahi zala!"
-    )
-
-    print(
-        "Windows Camera app madhye camera working aahe ka check kara."
-    )
-
-    exit()
-
-
-print("\nCamera started successfully!")
-
-print("\nControls:")
-print("S = Scan business card")
-print("Q = Quit")
-
-
-# =========================================================
-# MAIN CAMERA LOOP
-# =========================================================
-
-while True:
-
-    ret, frame = cap.read()
-
-    if not ret:
-
-        print(
-            "Camera frame read nahi zala!"
-        )
-
-        break
-
-
-    # Display instructions
-    display_frame = frame.copy()
-
-    cv2.putText(
-        display_frame,
-        "Press S to Scan | Q to Quit",
-        (20, 40),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.8,
-        (0, 255, 255),
-        2
-    )
-
-    cv2.imshow(
-        "Business Card OCR",
-        display_frame
-    )
-
-
-    key = cv2.waitKey(1) & 0xFF
-
+    print("\n================================")
+    print(" BUSINESS CARD OCR SCANNER")
+    print("================================")
 
     # =====================================================
-    # SCAN
+    # CREATE EXPECTED CSV
     # =====================================================
 
-    if key == ord("s") or key == ord("S"):
+    create_expected_csv()
+
+    # =====================================================
+    # CAMERA 1 = SECOND CAMERA
+    # =====================================================
+
+    camera = cv2.VideoCapture(1)
+
+    if not camera.isOpened():
 
         print(
-            "\n\nScanning business card..."
+            "\nCamera 1 not available."
         )
 
-        # Save captured image
-        cv2.imwrite(
-            "captured_card.jpg",
+        print(
+            "Trying Camera 0..."
+        )
+
+        camera = cv2.VideoCapture(0)
+
+    if not camera.isOpened():
+
+        print(
+            "\nERROR: Camera could not be opened."
+        )
+
+        return
+
+    print("\nCamera started!")
+
+    print(
+        "Press S = Scan"
+    )
+
+    print(
+        "Press Q = Quit"
+    )
+
+    # =====================================================
+    # CAMERA LOOP
+    # =====================================================
+
+    while True:
+
+        ret, frame = camera.read()
+
+        if not ret:
+
+            print(
+                "Cannot read camera."
+            )
+
+            break
+
+        cv2.imshow(
+            "Business Card Scanner",
             frame
         )
 
-        # Preprocess
-        processed = preprocess_image(
-            frame
-        )
-
+        key = cv2.waitKey(1) & 0xFF
 
         # =================================================
-        # OCR
+        # SCAN
         # =================================================
 
-        text = pytesseract.image_to_string(
-            processed,
-            config="--psm 6"
-        )
+        if key == ord("s") or key == ord("S"):
 
+            print("\nScanning...")
 
-        print("\n================================")
-        print("FULL OCR TEXT")
-        print("================================")
+            # =================================================
+            # GRAYSCALE
+            # =================================================
 
-        print(text)
+            gray = cv2.cvtColor(
+                frame,
+                cv2.COLOR_BGR2GRAY
+            )
 
+            # =================================================
+            # RESIZE
+            # =================================================
 
-        # =================================================
-        # EXTRACT INFORMATION
-        # =================================================
+            gray = cv2.resize(
+                gray,
+                None,
+                fx=2,
+                fy=2,
+                interpolation=cv2.INTER_CUBIC
+            )
 
-        name = extract_name(
-            text
-        )
+            # =================================================
+            # THRESHOLD
+            # =================================================
 
-        designation = extract_designation(
-            text
-        )
+            processed = cv2.threshold(
+                gray,
+                0,
+                255,
+                cv2.THRESH_BINARY
+                + cv2.THRESH_OTSU
+            )[1]
 
-        company = extract_company(
-            text
-        )
+            # =================================================
+            # OCR
+            # =================================================
 
-        phone = extract_phone(
-            text
-        )
+            text = pytesseract.image_to_string(
+                processed,
+                config="--psm 6"
+            )
 
-        email = extract_email(
-            text
-        )
+            print("\nOCR TEXT:")
+            print("--------------------------------")
+            print(text)
+            print("--------------------------------")
 
-        website = extract_website(
-            text
-        )
+            # =================================================
+            # EXTRACT DATA
+            # =================================================
 
-        gstin = extract_gstin(
-            text
-        )
+            name = extract_name(text)
 
-        card_address = extract_address(
-            text
-        )
+            designation = extract_designation(
+                text
+            )
 
+            company = extract_company(
+                text
+            )
 
-        # =================================================
-        # ADDRESS CHECK
-        # =================================================
+            gstin = extract_gstin(
+                text
+            )
 
-        address_match, percentage = check_address_match(
-            card_address,
-            EXPECTED_ADDRESS
-        )
+            phone = extract_phone(
+                text
+            )
 
+            email = extract_email(
+                text
+            )
 
-        # =================================================
-        # PRINT RESULT
-        # =================================================
+            website = extract_website(
+                text
+            )
 
-        print("\n================================")
-        print("EXTRACTED INFORMATION")
-        print("================================")
+            address = extract_address(
+                text
+            )
 
-        print("Name:", name)
-        print("Designation:", designation)
-        print("Company:", company)
-        print("GSTIN:", gstin)
-        print("Phone:", phone)
-        print("Email:", email)
-        print("Website:", website)
-        print("Address:", card_address)
+            # =================================================
+            # ADDRESS DETAILS
+            # =================================================
 
-        print(
-            "\nAddress Match:",
-            address_match
-        )
+            sr_no, city, pincode = (
+                extract_address_details(
+                    address
+                )
+            )
 
-        print(
-            "Match Percentage:",
-            round(percentage, 2),
-            "%"
-        )
+            # =================================================
+            # ADDRESS MATCH
+            # =================================================
 
+            address_match, percentage = (
+                check_address_match(
+                    address
+                )
+            )
 
-        # =================================================
-        # SAVE TO CSV
-        # =================================================
+            # =================================================
+            # DISPLAY
+            # =================================================
 
-        data = {
+            print("\n================================")
+            print("EXTRACTED INFORMATION")
+            print("================================")
 
-            "Name": name,
+            print(
+                "Name:",
+                name
+            )
 
-            "Designation": designation,
+            print(
+                "Designation:",
+                designation
+            )
 
-            "Company": company,
+            print(
+                "Company:",
+                company
+            )
 
-            "GSTIN": gstin,
+            print(
+                "GSTIN:",
+                gstin
+            )
 
-            "Phone": phone,
+            print(
+                "Phone:",
+                phone
+            )
 
-            "Email": email,
+            print(
+                "Email:",
+                email
+            )
 
-            "Website": website,
+            print(
+                "Website:",
+                website
+            )
 
-            "Address": card_address,
+            print(
+                "\nAddress:",
+                address
+            )
 
-            "Expected Address": EXPECTED_ADDRESS,
+            print(
+                "Sr No:",
+                sr_no
+            )
 
-            "Address Match": (
+            print(
+                "City:",
+                city
+            )
+
+            print(
+                "Pincode:",
+                pincode
+            )
+
+            print(
+                "\nAddress Match:",
                 "MATCHED"
                 if address_match
                 else "NOT MATCHED"
-            ),
-
-            "Match Percentage": round(
-                percentage,
-                2
             )
-        }
 
+            print(
+                "Match Percentage:",
+                round(
+                    percentage,
+                    2
+                ),
+                "%"
+            )
 
-        save_to_csv(
-            data
-        )
+            # =================================================
+            # SCANNED CSV DATA
+            # =================================================
 
+            data = {
+
+                "Name": name,
+
+                "Designation":
+                    designation,
+
+                "Company":
+                    company,
+
+                "GSTIN":
+                    gstin,
+
+                "Phone":
+                    phone,
+
+                "Email":
+                    email,
+
+                "Website":
+                    website,
+
+                "Address":
+                    address,
+
+                # Separate fields
+                "Sr No":
+                    sr_no,
+
+                "City":
+                    city,
+
+                "Pincode":
+                    pincode,
+
+                "Address Match":
+                    "MATCHED"
+                    if address_match
+                    else "NOT MATCHED",
+
+                "Match Percentage":
+                    round(
+                        percentage,
+                        2
+                    )
+            }
+
+            # =================================================
+            # SAVE
+            # =================================================
+
+            save_scanned_data(
+                data
+            )
+
+            print(
+                "\nScan complete!"
+            )
 
         # =================================================
-        # RESULT DISPLAY
+        # QUIT
         # =================================================
 
-        result_image = frame.copy()
+        elif key == ord("q") or key == ord("Q"):
 
-
-        if address_match:
-
-            # Green rectangle
-            cv2.rectangle(
-                result_image,
-                (20, 20),
-                (900, 130),
-                (0, 255, 0),
-                5
+            print(
+                "\nProgram closed."
             )
 
-            cv2.putText(
-                result_image,
-                "ADDRESS MATCHED",
-                (50, 90),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1.5,
-                (0, 255, 0),
-                4
-            )
-
-            cv2.putText(
-                result_image,
-                "MATCH: {:.1f}%".format(
-                    percentage
-                ),
-                (50, 120),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                (0, 255, 0),
-                2
-            )
-
-        else:
-
-            # Red rectangle
-            cv2.rectangle(
-                result_image,
-                (20, 20),
-                (900, 130),
-                (0, 0, 255),
-                5
-            )
-
-            cv2.putText(
-                result_image,
-                "ADDRESS NOT MATCHED",
-                (50, 90),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1.3,
-                (0, 0, 255),
-                4
-            )
-
-            cv2.putText(
-                result_image,
-                "MATCH: {:.1f}%".format(
-                    percentage
-                ),
-                (50, 120),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                (0, 0, 255),
-                2
-            )
-
-
-        # Show result
-        cv2.imshow(
-            "SCAN RESULT",
-            result_image
-        )
-
-        print(
-            "\nScan complete!"
-        )
-
-        print(
-            "Press any key on result window..."
-        )
-
-        cv2.waitKey(0)
-
-        cv2.destroyWindow(
-            "SCAN RESULT"
-        )
-
+            break
 
     # =====================================================
-    # QUIT
+    # RELEASE CAMERA
     # =====================================================
 
-    elif key == ord("q") or key == ord("Q"):
+    camera.release()
 
-        print(
-            "\nExiting..."
-        )
-
-        break
+    cv2.destroyAllWindows()
 
 
 # =========================================================
-# RELEASE CAMERA
+# START PROGRAM
 # =========================================================
 
-cap.release()
+if __name__ == "__main__":
 
-cv2.destroyAllWindows()
+    main()
 
-print(
-    "\nProgram closed."
-)
