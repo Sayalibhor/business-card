@@ -1,161 +1,1126 @@
+<html>
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-
-    <title>Business Card OCR</title>
+    <title>CardScan AI | Business Card OCR</title>
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
-
 </head>
 
 <body>
 
-<div class="container">
+<!-- =====================================================
+     HEADER
+===================================================== -->
 
-    <h1>Business Card OCR Scanner</h1>
+<header class="header">
 
-    <p>Scan Business Card and Save Data to CSV</p>
+    <div class="logo">
 
-    <div class="camera">
+        <div class="logo-icon">
+            ✦
+        </div>
 
-        <video id="video"
-               autoplay
-               playsinline>
-        </video>
+        <div>
+            <h2>
+                CardScan <span>AI</span>
+            </h2>
 
-        <canvas id="canvas"></canvas>
-
-    </div>
-
-    <div class="buttons">
-
-        <button onclick="startCamera()">
-            📷 Start Camera
-        </button>
-
-        <button onclick="scanCard()">
-            🔍 Scan & Save
-        </button>
-
-        <button onclick="stopCamera()">
-            ⛔ Stop Camera
-        </button>
+            <p>
+                Business Card Intelligence
+            </p>
+        </div>
 
     </div>
 
-    <div id="status">
-        Camera is not started
-    </div>
 
-    <h2>Scanned Data</h2>
+    <div class="system-status">
 
-    <div class="table-box">
+        <span class="status-dot"></span>
 
-        <table>
-
-            <thead>
-
-                <tr>
-                    <th>Name</th>
-                    <th>Designation</th>
-                    <th>Company</th>
-                    <th>GSTIN</th>
-                    <th>Phone</th>
-                    <th>Email</th>
-                    <th>Website</th>
-                    <th>Address</th>
-                    <th>Sr No</th>
-                    <th>City</th>
-                    <th>Pincode</th>
-                </tr>
-
-            </thead>
-
-            <tbody id="resultTable"></tbody>
-
-        </table>
+        OCR SYSTEM READY
 
     </div>
 
-    <h2>Raw OCR Text</h2>
+</header>
 
-    <textarea id="rawText" readonly></textarea>
 
-</div>
+<!-- =====================================================
+     MAIN
+===================================================== -->
+
+<main class="container">
+
+
+    <!-- ================= HERO ================= -->
+
+    <section class="hero">
+
+        <div class="badge">
+            🤖 AI POWERED OCR
+        </div>
+
+        <h1>
+            Turn Business Cards<br>
+            Into <span>Digital Data</span>
+        </h1>
+
+        <p>
+            Scan a business card using your laptop or
+            external USB camera and automatically extract
+            contact information.
+        </p>
+
+    </section>
+
+
+
+    <!-- =================================================
+         SCANNER GRID
+    ================================================= -->
+
+    <section class="scanner-grid">
+
+
+        <!-- ================= CAMERA ================= -->
+
+        <div class="card camera-card">
+
+
+            <div class="card-header">
+
+                <div>
+
+                    <h2>
+                        📷 Card Scanner
+                    </h2>
+
+                    <p>
+                        Select your camera and place the
+                        business card inside the frame.
+                    </p>
+
+                </div>
+
+
+                <div class="live-badge">
+                    ● LIVE
+                </div>
+
+            </div>
+
+
+
+            <!-- ================= CAMERA SELECT ================= -->
+
+            <div class="camera-select">
+
+                <label for="cameraSelect">
+                    Select Camera
+                </label>
+
+
+                <div class="camera-row">
+
+                    <select id="cameraSelect">
+
+                        <option value="">
+                            Loading cameras...
+                        </option>
+
+                    </select>
+
+
+                    <button
+                        class="refresh-btn"
+                        onclick="getCameras()"
+                        title="Refresh camera list">
+
+                        🔄
+
+                    </button>
+
+                </div>
+
+
+                <p class="camera-help">
+                    💡 Connect your USB camera and click
+                    refresh if it is not visible.
+                </p>
+
+            </div>
+
+
+
+            <!-- ================= CAMERA PREVIEW ================= -->
+
+            <div class="camera">
+
+                <video
+                    id="video"
+                    autoplay
+                    playsinline>
+                </video>
+
+
+                <!-- Scanner frame -->
+
+                <div class="scan-frame">
+
+                    <div class="corner top-left"></div>
+
+                    <div class="corner top-right"></div>
+
+                    <div class="corner bottom-left"></div>
+
+                    <div class="corner bottom-right"></div>
+
+                    <div class="scan-line"></div>
+
+                </div>
+
+
+                <div class="camera-message">
+
+                    Place Business Card Here
+
+                </div>
+
+            </div>
+
+
+            <canvas id="canvas"></canvas>
+
+
+
+            <!-- ================= BUTTONS ================= -->
+
+            <div class="buttons">
+
+
+                <button
+                    class="btn primary"
+                    onclick="startCamera()">
+
+                    📷 Start Camera
+
+                </button>
+
+
+                <button
+                    class="btn scan"
+                    onclick="scanCard()">
+
+                    🔍 Scan Card
+
+                </button>
+
+
+                <button
+                    class="btn danger"
+                    onclick="stopCamera()">
+
+                    ⛔ Stop
+
+                </button>
+
+
+            </div>
+
+
+            <!-- STATUS -->
+
+            <div id="status" class="status">
+
+                Camera not started
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- =================================================
+             RESULT PANEL
+        ================================================= -->
+
+        <div class="card result-card">
+
+
+            <div class="card-header">
+
+                <div>
+
+                    <h2>
+                        ✨ Extracted Information
+                    </h2>
+
+                    <p>
+                        AI detected business card details
+                    </p>
+
+                </div>
+
+
+                <div class="ai-icon">
+                    AI
+                </div>
+
+            </div>
+
+
+
+            <div class="result-content">
+
+
+                <div class="info-item">
+
+                    <span>
+                        👤 Name
+                    </span>
+
+                    <strong id="rName">
+                        —
+                    </strong>
+
+                </div>
+
+
+                <div class="info-item">
+
+                    <span>
+                        💼 Designation
+                    </span>
+
+                    <strong id="rDesignation">
+                        —
+                    </strong>
+
+                </div>
+
+
+                <div class="info-item">
+
+                    <span>
+                        🏢 Company
+                    </span>
+
+                    <strong id="rCompany">
+                        —
+                    </strong>
+
+                </div>
+
+
+                <div class="info-item">
+
+                    <span>
+                        📞 Phone
+                    </span>
+
+                    <strong id="rPhone">
+                        —
+                    </strong>
+
+                </div>
+
+
+                <div class="info-item">
+
+                    <span>
+                        ✉️ Email
+                    </span>
+
+                    <strong id="rEmail">
+                        —
+                    </strong>
+
+                </div>
+
+
+                <div class="info-item">
+
+                    <span>
+                        🌐 Website
+                    </span>
+
+                    <strong id="rWebsite">
+                        —
+                    </strong>
+
+                </div>
+
+
+                <div class="info-item">
+
+                    <span>
+                        📍 City
+                    </span>
+
+                    <strong id="rCity">
+                        —
+                    </strong>
+
+                </div>
+
+
+                <div class="info-item">
+
+                    <span>
+                        📮 Pincode
+                    </span>
+
+                    <strong id="rPincode">
+                        —
+                    </strong>
+
+                </div>
+
+
+                <div class="info-item full">
+
+                    <span>
+                        🏠 Address
+                    </span>
+
+                    <strong id="rAddress">
+                        —
+                    </strong>
+
+                </div>
+
+
+                <div class="info-item full">
+
+                    <span>
+                        🧾 GSTIN
+                    </span>
+
+                    <strong id="rGSTIN">
+                        —
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- =================================================
+         STATISTICS
+    ================================================= -->
+
+    <section class="stats">
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                📇
+            </div>
+
+            <div>
+
+                <p>
+                    Cards Scanned
+                </p>
+
+                <h2 id="cardCount">
+                    0
+                </h2>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                💾
+            </div>
+
+            <div>
+
+                <p>
+                    Data Saved
+                </p>
+
+                <h2 id="savedCount">
+                    0
+                </h2>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                ⚡
+            </div>
+
+            <div>
+
+                <p>
+                    OCR Status
+                </p>
+
+                <h2 class="ready">
+                    Ready
+                </h2>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                📊
+            </div>
+
+            <div>
+
+                <p>
+                    Storage
+                </p>
+
+                <h2>
+                    CSV + XLSX
+                </h2>
+
+            </div>
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- =================================================
+         SAVED DATA TABLE
+    ================================================= -->
+
+    <section class="card table-section">
+
+
+        <div class="table-header">
+
+
+            <div>
+
+                <h2>
+                    📋 Scanned Business Cards
+                </h2>
+
+                <p>
+                    Recently extracted information
+                </p>
+
+            </div>
+
+
+            <div class="search-box">
+
+                🔍
+
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Search cards..."
+                    onkeyup="searchTable()">
+
+            </div>
+
+
+        </div>
+
+
+
+        <div class="table-box">
+
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Name</th>
+
+                        <th>Designation</th>
+
+                        <th>Company</th>
+
+                        <th>GSTIN</th>
+
+                        <th>Phone</th>
+
+                        <th>Email</th>
+
+                        <th>Website</th>
+
+                        <th>Address</th>
+
+                        <th>Sr No</th>
+
+                        <th>City</th>
+
+                        <th>Pincode</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="resultTable">
+
+                </tbody>
+
+
+            </table>
+
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- =================================================
+         RAW OCR
+    ================================================= -->
+
+    <section class="card raw-section">
+
+
+        <div class="card-header">
+
+            <div>
+
+                <h2>
+                    📝 Raw OCR Text
+                </h2>
+
+                <p>
+                    Original text detected by Tesseract OCR
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <textarea
+            id="rawText"
+            readonly
+            placeholder="OCR text will appear here after scanning...">
+        </textarea>
+
+
+    </section>
+
+
+</main>
+
+
+
+<!-- =====================================================
+     FOOTER
+===================================================== -->
+
+<footer>
+
+    <p>
+        CardScan AI • Business Card OCR System
+    </p>
+
+    <span>
+        Powered by Python • Flask • OpenCV • Tesseract
+    </span>
+
+</footer>
+
+
+
+<!-- =====================================================
+     JAVASCRIPT
+===================================================== -->
 
 <script>
 
+
+/* =====================================================
+   GLOBAL VARIABLES
+===================================================== */
+
 let stream = null;
 
+let scannedCount = 0;
 
-async function startCamera() {
+
+
+/* =====================================================
+   GET ALL CAMERAS
+===================================================== */
+
+async function getCameras() {
+
+    const cameraSelect =
+        document.getElementById("cameraSelect");
+
+
+    cameraSelect.innerHTML =
+        '<option value="">Loading cameras...</option>';
+
 
     try {
 
-        stream = await navigator.mediaDevices.getUserMedia({
-            video: true
-        });
 
-        document.getElementById("video").srcObject = stream;
+        /* ---------------------------------------------
+           REQUEST CAMERA PERMISSION
+        --------------------------------------------- */
 
-        document.getElementById("status").innerText =
-            "Camera started. Place business card in front of camera.";
+        const tempStream =
+            await navigator.mediaDevices.getUserMedia({
 
-    } catch (error) {
+                video: true
 
-        document.getElementById("status").innerText =
-            "Camera permission denied.";
+            });
 
-        console.log(error);
+
+        /* ---------------------------------------------
+           STOP TEMPORARY CAMERA
+        --------------------------------------------- */
+
+        tempStream
+            .getTracks()
+            .forEach(
+                track => track.stop()
+            );
+
+
+
+        /* ---------------------------------------------
+           GET DEVICES
+        --------------------------------------------- */
+
+        const devices =
+            await navigator.mediaDevices.enumerateDevices();
+
+
+
+        /* ---------------------------------------------
+           FILTER CAMERAS
+        --------------------------------------------- */
+
+        const cameras =
+            devices.filter(
+                device =>
+                    device.kind === "videoinput"
+            );
+
+
+
+        /* ---------------------------------------------
+           CLEAR DROPDOWN
+        --------------------------------------------- */
+
+        cameraSelect.innerHTML =
+            '<option value="">Select Camera</option>';
+
+
+
+        /* ---------------------------------------------
+           NO CAMERA
+        --------------------------------------------- */
+
+        if (cameras.length === 0) {
+
+            cameraSelect.innerHTML =
+                '<option value="">No camera found</option>';
+
+            alert(
+                "No camera detected. Please connect your laptop or USB camera."
+            );
+
+            return;
+
+        }
+
+
+
+        /* ---------------------------------------------
+           ADD CAMERAS
+        --------------------------------------------- */
+
+        cameras.forEach(
+            function(camera, index) {
+
+
+                const option =
+                    document.createElement("option");
+
+
+                option.value =
+                    camera.deviceId;
+
+
+
+                /* Camera label */
+
+                let cameraName =
+                    camera.label;
+
+
+
+                if (!cameraName) {
+
+                    cameraName =
+                        "Camera " + (index + 1);
+
+                }
+
+
+
+                /* Detect external camera */
+
+                const nameLower =
+                    cameraName.toLowerCase();
+
+
+                if (
+                    nameLower.includes("usb") ||
+                    nameLower.includes("external") ||
+                    nameLower.includes("webcam") ||
+                    nameLower.includes("hd camera")
+                ) {
+
+                    cameraName =
+                        "🔌 External - " +
+                        cameraName;
+
+                }
+
+                else {
+
+                    cameraName =
+                        "💻 " +
+                        cameraName;
+
+                }
+
+
+
+                option.textContent =
+                    cameraName;
+
+
+                cameraSelect.appendChild(
+                    option
+                );
+
+
+            }
+        );
+
+
+
+        /* ---------------------------------------------
+           CONSOLE DEBUG
+        --------------------------------------------- */
+
+        console.log(
+            "Available Cameras:"
+        );
+
+
+        cameras.forEach(
+            function(camera, index) {
+
+                console.log(
+                    index + 1,
+                    camera.label,
+                    camera.deviceId
+                );
+
+            }
+        );
+
+
     }
+
+    catch (error) {
+
+
+        console.error(
+            "Camera Permission Error:",
+            error
+        );
+
+
+        cameraSelect.innerHTML =
+            '<option value="">Permission denied</option>';
+
+
+        alert(
+            "Camera permission is required. Please click Allow."
+        );
+
+
+    }
+
 }
 
+
+
+/* =====================================================
+   START SELECTED CAMERA
+===================================================== */
+
+async function startCamera() {
+
+
+    const cameraSelect =
+        document.getElementById(
+            "cameraSelect"
+        );
+
+
+    const cameraId =
+        cameraSelect.value;
+
+
+
+    /* No camera selected */
+
+    if (!cameraId) {
+
+        alert(
+            "Please select a camera first."
+        );
+
+        return;
+
+    }
+
+
+
+    try {
+
+
+        /* Stop old camera */
+
+        stopCamera();
+
+
+
+        /* Start selected camera */
+
+        stream =
+            await navigator.mediaDevices
+            .getUserMedia({
+
+                video: {
+
+                    deviceId: {
+                        exact: cameraId
+                    },
+
+                    width: {
+                        ideal: 1920
+                    },
+
+                    height: {
+                        ideal: 1080
+                    }
+
+                }
+
+            });
+
+
+
+        /* Attach stream */
+
+        const video =
+            document.getElementById(
+                "video"
+            );
+
+
+        video.srcObject =
+            stream;
+
+
+
+        await video.play();
+
+
+
+        /* Status */
+
+        document.getElementById(
+            "status"
+        ).innerText =
+            "🟢 Camera started — Ready to scan";
+
+
+        console.log(
+            "Selected Camera:",
+            cameraId
+        );
+
+
+    }
+
+    catch (error) {
+
+
+        console.error(
+            "Camera Start Error:",
+            error
+        );
+
+
+        alert(
+            "Unable to start selected camera."
+        );
+
+
+    }
+
+}
+
+
+
+/* =====================================================
+   STOP CAMERA
+===================================================== */
 
 function stopCamera() {
 
+
     if (stream) {
 
-        stream.getTracks().forEach(
-            track => track.stop()
-        );
+
+        stream
+            .getTracks()
+            .forEach(
+                track =>
+                    track.stop()
+            );
+
 
         stream = null;
 
-        document.getElementById("video").srcObject = null;
 
-        document.getElementById("status").innerText =
+
+        document.getElementById(
+            "video"
+        ).srcObject = null;
+
+
+
+        document.getElementById(
+            "status"
+        ).innerText =
             "Camera stopped.";
+
+
     }
+
 }
 
 
+
+/* =====================================================
+   SCAN BUSINESS CARD
+===================================================== */
+
 async function scanCard() {
+
+
+    /* Camera check */
 
     if (!stream) {
 
-        alert("Please start camera first.");
+        alert(
+            "Please start the camera first."
+        );
 
         return;
+
     }
 
+
+
     const video =
-        document.getElementById("video");
+        document.getElementById(
+            "video"
+        );
+
 
     const canvas =
-        document.getElementById("canvas");
+        document.getElementById(
+            "canvas"
+        );
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+
+
+    /* Check video */
+
+    if (
+        video.videoWidth === 0 ||
+        video.videoHeight === 0
+    ) {
+
+        alert(
+            "Camera is not ready yet. Please wait."
+        );
+
+        return;
+
+    }
+
+
+
+    /* Canvas size */
+
+    canvas.width =
+        video.videoWidth;
+
+
+    canvas.height =
+        video.videoHeight;
+
+
+
+    /* Capture image */
 
     const context =
         canvas.getContext("2d");
+
 
     context.drawImage(
         video,
@@ -165,102 +1130,370 @@ async function scanCard() {
         canvas.height
     );
 
-    document.getElementById("status").innerText =
-        "Scanning... Please wait.";
 
 
-    canvas.toBlob(async function(blob) {
+    /* Status */
 
-        const formData = new FormData();
-
-        formData.append(
-            "image",
-            blob,
-            "card.jpg"
-        );
-
-        try {
-
-            const response =
-                await fetch("/scan", {
-                    method: "POST",
-                    body: formData
-                });
-
-            const result =
-                await response.json();
+    document.getElementById(
+        "status"
+    ).innerText =
+        "🔍 AI is scanning the card...";
 
 
-            if (!result.success) {
 
-                alert(result.message);
+    /* Convert image */
 
-                return;
+    canvas.toBlob(
+
+        async function(blob) {
+
+
+            const formData =
+                new FormData();
+
+
+            formData.append(
+                "image",
+                blob,
+                "business_card.jpg"
+            );
+
+
+
+            try {
+
+
+                /* Send to Flask */
+
+                const response =
+                    await fetch(
+                        "/scan",
+                        {
+
+                            method: "POST",
+
+                            body: formData
+
+                        }
+                    );
+
+
+
+                const result =
+                    await response.json();
+
+
+
+                /* Error */
+
+                if (!result.success) {
+
+
+                    alert(
+                        result.message
+                    );
+
+
+                    document.getElementById(
+                        "status"
+                    ).innerText =
+                        "❌ Scan failed.";
+
+
+                    return;
+
+                }
+
+
+
+                const data =
+                    result.data;
+
+
+
+                /* =========================================
+                   RESULT PANEL
+                ========================================= */
+
+
+                document.getElementById(
+                    "rName"
+                ).innerText =
+                    data["Name"] || "—";
+
+
+                document.getElementById(
+                    "rDesignation"
+                ).innerText =
+                    data["Designation"] || "—";
+
+
+                document.getElementById(
+                    "rCompany"
+                ).innerText =
+                    data["Company"] || "—";
+
+
+                document.getElementById(
+                    "rPhone"
+                ).innerText =
+                    data["Phone"] || "—";
+
+
+                document.getElementById(
+                    "rEmail"
+                ).innerText =
+                    data["Email"] || "—";
+
+
+                document.getElementById(
+                    "rWebsite"
+                ).innerText =
+                    data["Website"] || "—";
+
+
+                document.getElementById(
+                    "rCity"
+                ).innerText =
+                    data["City"] || "—";
+
+
+                document.getElementById(
+                    "rPincode"
+                ).innerText =
+                    data["Pincode"] || "—";
+
+
+                document.getElementById(
+                    "rAddress"
+                ).innerText =
+                    data["Address"] || "—";
+
+
+                document.getElementById(
+                    "rGSTIN"
+                ).innerText =
+                    data["GSTIN"] || "—";
+
+
+
+                /* =========================================
+                   ADD TABLE ROW
+                ========================================= */
+
+
+                const row =
+                    document.createElement(
+                        "tr"
+                    );
+
+
+                const fields = [
+
+                    "Name",
+                    "Designation",
+                    "Company",
+                    "GSTIN",
+                    "Phone",
+                    "Email",
+                    "Website",
+                    "Address",
+                    "Sr No",
+                    "City",
+                    "Pincode"
+
+                ];
+
+
+
+                fields.forEach(
+                    function(field) {
+
+
+                        const cell =
+                            document.createElement(
+                                "td"
+                            );
+
+
+                        cell.innerText =
+                            data[field] || "";
+
+
+                        row.appendChild(
+                            cell
+                        );
+
+
+                    }
+                );
+
+
+                document.getElementById(
+                    "resultTable"
+                ).appendChild(
+                    row
+                );
+
+
+
+                /* =========================================
+                   UPDATE COUNTERS
+                ========================================= */
+
+
+                scannedCount++;
+
+
+                document.getElementById(
+                    "cardCount"
+                ).innerText =
+                    scannedCount;
+
+
+                document.getElementById(
+                    "savedCount"
+                ).innerText =
+                    scannedCount;
+
+
+
+                /* =========================================
+                   RAW OCR
+                ========================================= */
+
+
+                document.getElementById(
+                    "rawText"
+                ).value =
+                    result.raw_text;
+
+
+
+                /* SUCCESS */
+
+                document.getElementById(
+                    "status"
+                ).innerText =
+                    "✅ Card scanned and saved successfully!";
+
+
             }
 
-
-            const data = result.data;
-
-            const row =
-                document.createElement("tr");
+            catch (error) {
 
 
-            const fields = [
-                "Name",
-                "Designation",
-                "Company",
-                "GSTIN",
-                "Phone",
-                "Email",
-                "Website",
-                "Address",
-                "Sr No",
-                "City",
-                "Pincode"
-            ];
+                console.error(
+                    "Scan Error:",
+                    error
+                );
 
 
-            fields.forEach(function(field) {
-
-                const cell =
-                    document.createElement("td");
-
-                cell.innerText =
-                    data[field] || "";
-
-                row.appendChild(cell);
-
-            });
+                document.getElementById(
+                    "status"
+                ).innerText =
+                    "❌ Error while scanning.";
 
 
-            document
-                .getElementById("resultTable")
-                .appendChild(row);
+                alert(
+                    "Server error while scanning."
+                );
 
 
-            document.getElementById("rawText").value =
-                result.raw_text;
+            }
 
+        },
 
-            document.getElementById("status").innerText =
-                "✅ Card scanned and saved to CSV!";
+        "image/jpeg"
 
-        }
+    );
 
-        catch (error) {
-
-            console.log(error);
-
-            document.getElementById("status").innerText =
-                "Error while scanning.";
-
-        }
-
-    }, "image/jpeg");
 }
+
+
+
+/* =====================================================
+   SEARCH TABLE
+===================================================== */
+
+function searchTable() {
+
+
+    const input =
+        document.getElementById(
+            "searchInput"
+        );
+
+
+    const filter =
+        input.value.toLowerCase();
+
+
+    const table =
+        document.getElementById(
+            "resultTable"
+        );
+
+
+    const rows =
+        table.getElementsByTagName(
+            "tr"
+        );
+
+
+
+    for (
+        let i = 0;
+        i < rows.length;
+        i++
+    ) {
+
+
+        const text =
+            rows[i]
+            .innerText
+            .toLowerCase();
+
+
+
+        if (
+            text.includes(filter)
+        ) {
+
+            rows[i].style.display =
+                "";
+
+        }
+
+        else {
+
+            rows[i].style.display =
+                "none";
+
+        }
+
+
+    }
+
+}
+
+
+
+/* =====================================================
+   PAGE LOAD
+===================================================== */
+
+window.onload =
+    function() {
+
+        getCameras();
+
+    };
+
 
 </script>
 
 </body>
 
 </html>
+
