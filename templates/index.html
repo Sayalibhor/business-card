@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Business Card OCR</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Business Card OCR Scanner</h1>
+
+    <p>Scan Business Card and Save Data to CSV</p>
+
+    <div class="camera">
+
+        <video id="video"
+               autoplay
+               playsinline>
+        </video>
+
+        <canvas id="canvas"></canvas>
+
+    </div>
+
+    <div class="buttons">
+
+        <button onclick="startCamera()">
+            📷 Start Camera
+        </button>
+
+        <button onclick="scanCard()">
+            🔍 Scan & Save
+        </button>
+
+        <button onclick="stopCamera()">
+            ⛔ Stop Camera
+        </button>
+
+    </div>
+
+    <div id="status">
+        Camera is not started
+    </div>
+
+    <h2>Scanned Data</h2>
+
+    <div class="table-box">
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Name</th>
+                    <th>Designation</th>
+                    <th>Company</th>
+                    <th>GSTIN</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Website</th>
+                    <th>Address</th>
+                    <th>Sr No</th>
+                    <th>City</th>
+                    <th>Pincode</th>
+                </tr>
+
+            </thead>
+
+            <tbody id="resultTable"></tbody>
+
+        </table>
+
+    </div>
+
+    <h2>Raw OCR Text</h2>
+
+    <textarea id="rawText" readonly></textarea>
+
+</div>
+
+<script>
+
+let stream = null;
+
+
+async function startCamera() {
+
+    try {
+
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: true
+        });
+
+        document.getElementById("video").srcObject = stream;
+
+        document.getElementById("status").innerText =
+            "Camera started. Place business card in front of camera.";
+
+    } catch (error) {
+
+        document.getElementById("status").innerText =
+            "Camera permission denied.";
+
+        console.log(error);
+    }
+}
+
+
+function stopCamera() {
+
+    if (stream) {
+
+        stream.getTracks().forEach(
+            track => track.stop()
+        );
+
+        stream = null;
+
+        document.getElementById("video").srcObject = null;
+
+        document.getElementById("status").innerText =
+            "Camera stopped.";
+    }
+}
+
+
+async function scanCard() {
+
+    if (!stream) {
+
+        alert("Please start camera first.");
+
+        return;
+    }
+
+    const video =
+        document.getElementById("video");
+
+    const canvas =
+        document.getElementById("canvas");
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const context =
+        canvas.getContext("2d");
+
+    context.drawImage(
+        video,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    document.getElementById("status").innerText =
+        "Scanning... Please wait.";
+
+
+    canvas.toBlob(async function(blob) {
+
+        const formData = new FormData();
+
+        formData.append(
+            "image",
+            blob,
+            "card.jpg"
+        );
+
+        try {
+
+            const response =
+                await fetch("/scan", {
+                    method: "POST",
+                    body: formData
+                });
+
+            const result =
+                await response.json();
+
+
+            if (!result.success) {
+
+                alert(result.message);
+
+                return;
+            }
+
+
+            const data = result.data;
+
+            const row =
+                document.createElement("tr");
+
+
+            const fields = [
+                "Name",
+                "Designation",
+                "Company",
+                "GSTIN",
+                "Phone",
+                "Email",
+                "Website",
+                "Address",
+                "Sr No",
+                "City",
+                "Pincode"
+            ];
+
+
+            fields.forEach(function(field) {
+
+                const cell =
+                    document.createElement("td");
+
+                cell.innerText =
+                    data[field] || "";
+
+                row.appendChild(cell);
+
+            });
+
+
+            document
+                .getElementById("resultTable")
+                .appendChild(row);
+
+
+            document.getElementById("rawText").value =
+                result.raw_text;
+
+
+            document.getElementById("status").innerText =
+                "✅ Card scanned and saved to CSV!";
+
+        }
+
+        catch (error) {
+
+            console.log(error);
+
+            document.getElementById("status").innerText =
+                "Error while scanning.";
+
+        }
+
+    }, "image/jpeg");
+}
+
+</script>
+
+</body>
+
+</html>
